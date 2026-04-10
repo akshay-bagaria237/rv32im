@@ -68,6 +68,36 @@ always @(posedge clk or negedge reset) begin
                         abs_op2       <= (is_signed && operand2[31]) ? -operand2 : operand2;
                         neg_quotient  <= is_signed && (operand1[31] ^ operand2[31]);
                         neg_remainder <= is_signed && operand1[31];
+                    end
+                end
+            end
+            
+            DIVIDE: begin
+                if (count == 0) begin
+                    state <= FINISH;
+                end
+                else begin
+                    temp_rem = {remainder_reg[30:0], quotient_reg[31]};
+                    if (temp_rem >= {1'b0, abs_op2}) begin
+                        remainder_reg <= temp_rem[31:0] - abs_op2;
+                        quotient_reg  <= {quotient_reg[30:0], 1'b1};
+                    end
+                    else begin
+                        remainder_reg <= temp_rem[31:0];
+                        quotient_reg  <= {quotient_reg[30:0], 1'b0};
+                    end
+                    count <= count - 1;
+                end
+            end
+            
+            FINISH: begin
+                state <= IDLE;
+                if (saved_div_by_zero) begin
+                    case (funct3)
+                        DIV, DIVU: result <= 32'hFFFF_FFFF;
+                        REM, REMU: result <= saved_operand1;
+                        default:   result <= 32'h0;
+                    endcase
         end
     end
 endmodule
