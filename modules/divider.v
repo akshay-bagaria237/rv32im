@@ -28,4 +28,46 @@ reg        saved_overflow;
 
 assign busy = (state != IDLE) || start;
 
+wire is_signed = (funct3 == DIV || funct3 == REM);
+
+wire div_by_zero_now = (operand2 == 32'h0);
+wire overflow_now    = (is_signed && operand1 == 32'h8000_0000 && operand2 == 32'hFFFF_FFFF);
+
+reg [32:0] temp_rem;
+
+always @(posedge clk or negedge reset) begin
+    if (!reset) begin
+        state         <= IDLE;
+        count         <= 0;
+        result        <= 32'h0;
+        abs_op2       <= 32'h0;
+        quotient_reg  <= 32'h0;
+        remainder_reg <= 32'h0;
+        neg_quotient  <= 1'b0;
+        neg_remainder <= 1'b0;
+        saved_operand1 <= 32'h0;
+        saved_div_by_zero <= 1'b0;
+        saved_overflow    <= 1'b0;
+    end
+    else begin
+        case (state)
+            IDLE: begin
+                if (start) begin
+                    saved_operand1 <= operand1;
+                    saved_div_by_zero <= div_by_zero_now;
+                    saved_overflow    <= overflow_now;
+                    
+                    if (div_by_zero_now || overflow_now) begin
+                        state <= FINISH;
+                    end
+                    else begin
+                        state         <= DIVIDE;
+                        count         <= 6'd32;
+                        remainder_reg <= 32'h0;
+                        quotient_reg  <= (is_signed && operand1[31]) ? -operand1 : operand1;
+                        abs_op2       <= (is_signed && operand2[31]) ? -operand2 : operand2;
+                        neg_quotient  <= is_signed && (operand1[31] ^ operand2[31]);
+                        neg_remainder <= is_signed && operand1[31];
+        end
+    end
 endmodule
