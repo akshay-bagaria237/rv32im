@@ -98,6 +98,25 @@ always @(posedge clk or negedge reset) begin
                         REM, REMU: result <= saved_operand1;
                         default:   result <= 32'h0;
                     endcase
-        end
+                end
+                else if (saved_overflow) begin
+                    case (funct3)
+                        DIV:       result <= 32'h8000_0000;
+                        REM:       result <= 32'h0;
+                        default:   result <= 32'h0;
+                    endcase
+                end
+                else begin
+                    case (funct3)
+                        DIV, DIVU: result <= neg_quotient ? -quotient_reg : quotient_reg;
+                        REM, REMU: result <= neg_remainder ? -remainder_reg : remainder_reg;
+                        default:   result <= 32'h0;
+                    endcase
+                end
+            end
+            default: state <= IDLE;
+        endcase
     end
+end
+
 endmodule
