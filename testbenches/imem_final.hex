@@ -1,0 +1,34 @@
+// Instructions accurately matching fpu.v and decode.v specific mappings.
+00a00093 // addi x1, x0, 10
+00300113 // addi x2, x0, 3
+ff600193 // addi x3, x0, -10
+ffd00213 // addi x4, x0, -3
+022082b3 // mul x5, x1, x2
+02419333 // mulh x6, x3, x4
+0221a3b3 // mulhsu x7, x3, x2
+0220b433 // mulhu x8, x1, x2
+0221c4b3 // div x9, x3, x2
+0220d533 // divu x10, x1, x2
+0221e5b3 // rem x11, x3, x2
+0220f633 // remu x12, x1, x2
+400006b7 // lui x13, 0x40000 (2.0f)
+40400737 // lui x14, 0x40400 (3.0f)
+40a007b7 // lui x15, 0x40A00 (5.0f)
+41100837 // lui x16, 0x41100 (9.0f)
+00e688d3 // fadd.s x17, x13, x14
+08d78953 // fsub.s x18, x15, x13
+10e689d3 // fmul.s x19, x13, x14
+18e80a53 // fdiv.s x20, x16, x14
+28e68ad3 // fmin.s x21, x13, x14
+28e69b53 // fmax.s x22, x13, x14
+a0e6abd3 // feq.s x23, x13, x14
+a0e69c53 // flt.s x24, x13, x14
+a0e68cd3 // fle.s x25, x13, x14
+c0070d53 // fcvt.w.s x26, x14
+c0170dd3 // fcvt.wu.s x27, x14
+d0008e53 // fcvt.s.w x28, x1
+d0108ed3 // fcvt.s.wu x29, x1
+c1f70f53 // custom.floor x30, x14
+c9f70fd3 // custom.ceil x31, x14
+d1f702d3 // custom.round x5, x14
+0000006f // jal x0, 0

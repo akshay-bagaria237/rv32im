@@ -1,0 +1,51 @@
+// Test program for the FPGA with RISC-V FPU, MUL, and DIV operations.
+// These instructions are written in hex and placed sequentially.
+// Each instruction is 4 bytes (32 bits).
+
+// 1. Set up some integer registers
+// x1 = 10 (0x0A) -> addi x1, x0, 10
+00a00093
+// x2 = 3  (0x03) -> addi x2, x0, 3
+00300113
+
+// 2. Integer Multiply / Divide (M-Extension)
+// mul x3, x1, x2  (Result: x3 = 30)
+022081b3
+// div x4, x1, x2  (Result: x4 = 3)
+0220c233
+// rem x5, x1, x2  (Result: x5 = 1)
+0220e2b3
+
+// 3. Load arbitrary immediate values to use as floating points
+// LUI puts the top 20 bits into a register.
+// 2.0 in IEEE-754 Single Precision is 0x4000_0000
+// lui x6, 0x40000
+40000337
+// 3.0 in IEEE-754 Single Precision is 0x4040_0000
+// lui x7, 0x40400
+404003b7
+// 5.0 in IEEE-754 Single Precision is 0x40A0_0000
+// lui x8, 0x40A00
+40a00437
+
+// 4. Move integer values into floating-point registers
+// fmv.w.x f0, x6  => f0 = 2.0
+f0030053
+// fmv.w.x f1, x7  => f1 = 3.0
+f00380d3
+// fmv.w.x f2, x8  => f2 = 5.0
+f0040153
+
+// 5. Floating Point Operations (F-Extension)
+// fadd.s f3, f0, f1 (Result: f3 = 2.0 + 3.0 = 5.0)
+001001d3
+// fsub.s f4, f2, f1 (Result: f4 = 5.0 - 3.0 = 2.0)
+08110253
+// fmul.s f5, f0, f1 (Result: f5 = 2.0 * 3.0 = 6.0)
+101002d3
+// fdiv.s f6, f1, f0 (Result: f6 = 3.0 / 2.0 = 1.5)
+18008353
+
+// 6. Infinite Loop for FPGA execution completion
+// jal x0, 0
+0000006f
