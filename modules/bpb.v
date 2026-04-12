@@ -12,4 +12,10 @@ module bpb #(
     input update_en,
     input update_dir
 );
+
+    localparam NUM_ENTRIES = 1 << INDEX_BITS;
+    reg [1:0] bht [0:NUM_ENTRIES-1];
+    
+    wire [INDEX_BITS-1:0] read_idx = read_pc[INDEX_BITS+1:2];
+    wire [INDEX_BITS-1:0] update_idx = update_pc[INDEX_BITS+1:2];
 endmodule
