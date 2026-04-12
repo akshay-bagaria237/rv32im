@@ -58,4 +58,64 @@ module tb_bpb_cache;
         begin
             if (expected_result == actual_result) begin
                 $display("[PASS] %s", test_name);
+                pass_count = pass_count + 1;
+            end else begin
+                $display("[FAIL] %s | Expected: %h, Got: %h", test_name, expected_result, actual_result);
+                fail_count = fail_count + 1;
+            end
+        end
+    endtask
+
+    initial begin
+        clk = 0;
+        forever #5 clk = ~clk;
+    end
+    
+    initial begin
+        $display("========================================");
+        $display(" STARTING FULL HIERARCHICAL TEST SUITE  ");
+        $display("========================================");
+        
+        // ------------------------------------------
+        // PHASE 1: BPB COMMON & EDGE CASES
+        // ------------------------------------------
+        rst = 1;
+        update_en = 0; l1_we = 0; l1_re = 0; l2_we = 0; l2_re = 0;
+        read_pc = 32'h0000_1000; update_pc = 32'h0; update_dir = 0;
+        #25 rst = 0;
+
+        // Test 1: Cold State
+        run_test("Test 1: BPB Initial State Returns Weakly Not Taken (0)", 32'h0, predict_dir);
+        
+        // Edge Case: 2-bit counter saturation climbing
+        update_pc = 32'h0000_1000; update_en = 1; update_dir = 1; #10; update_en = 0; read_pc = 32'h0000_1000; #10;
+        run_test("Test 2: BPB Correctly transitions 01 -> 10 (Weak Taken)", 32'h1, predict_dir);
+
+        update_en = 1; #10; update_en = 0; read_pc = 32'h0000_1000; #10;
+        run_test("Test 3: BPB Correctly transitions 10 -> 11 (Strong Taken)", 32'h1, predict_dir);
+
+        update_en = 1; #10; update_en = 0; read_pc = 32'h0000_1000; #10;
+        run_test("Test 4: BPB Saturates at 11 (Cannot overflow to 00)", 32'h1, predict_dir);
+
+        // Edge Case: 2-bit counter saturation descending
+        update_dir = 0; // Not taken
+        update_en = 1; #10; update_en = 0; read_pc = 32'h0000_1000; #10;
+        run_test("Test 5: BPB Recovers 11 -> 10 (Weakly Taken)", 32'h1, predict_dir);
+
+        update_en = 1; #10; update_en = 0; read_pc = 32'h0000_1000; #10;
+        run_test("Test 6: BPB Recovers 10 -> 01 (Weakly Not Taken)", 32'h0, predict_dir);
+
+        update_en = 1; #10; update_en = 0; read_pc = 32'h0000_1000; #10;
+        run_test("Test 7: BPB Descends 01 -> 00 (Strongly Not Taken)", 32'h0, predict_dir);
+
+        update_en = 1; #10; update_en = 0; read_pc = 32'h0000_1000; #10;
+        run_test("Test 8: BPB Saturates at 00 (Cannot underflow to 11)", 32'h0, predict_dir);
+
+        // Edge Case: Aliasing Collision
+        // 0x1000 -> Bits[9:2] are 0000_0000.  0x2000 -> Bits[9:2] are 0000_0000.
+        read_pc = 32'h0000_2000; #10;
+        run_test("Test 9: BPB Successfully handles index aliasing", 32'h0, predict_dir);
+
+
+        // ------------------------------------------
 endmodule
