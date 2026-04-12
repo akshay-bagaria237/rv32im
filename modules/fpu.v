@@ -16,4 +16,21 @@ module fpu(
     // Simple Multi-Cycle FPU (Best for Cycle Time & Easy to Read)
     // -------------------------------------------------------------------------
     
+    localparam IDLE           = 3'd0;
+    localparam ALIGN_MUL_DIV  = 3'd1;
+    localparam ADD            = 3'd2;
+    localparam NORM           = 3'd3;
+    localparam DIVIDE_LOOP    = 3'd4;
+
+    reg [2:0] state;
+    reg sign_a, sign_b, sign_res;
+    reg [8:0] exp_a, exp_b;
+    reg signed [9:0] exp_res; // Extra bits for overflow/underflow checks
+    reg [24:0] mant_a, mant_b, mant_res;
+    
+    reg [47:0] div_P; // For multi-cycle division
+    reg [47:0] div_A;
+    reg [5:0] div_count;
+    
+    // Combinational helpers for single-cycle operations
 endmodule
