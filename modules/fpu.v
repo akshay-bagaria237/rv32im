@@ -33,4 +33,19 @@ module fpu(
     reg [5:0] div_count;
     
     // Combinational helpers for single-cycle operations
+    wire [8:0] exp_diff_ab = exp_a - exp_b;
+    wire [8:0] exp_diff_ba = exp_b - exp_a;
+    reg [4:0] shift_amt;
+    reg [24:0] shifted_mant;
+
+    // Rounding specific combinational logic
+    function [31:0] compute_round;
+        input [31:0] a;
+        input [3:0] op;
+        reg r_sign;
+        reg [7:0] r_exp;
+        reg [22:0] r_mant;
+        reg [4:0] mask_shift;
+        reg [23:0] frac_mask;
+        reg [23:0] mant_mask;
 endmodule
