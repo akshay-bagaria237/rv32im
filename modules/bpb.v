@@ -18,4 +18,7 @@ module bpb #(
     
     wire [INDEX_BITS-1:0] read_idx = read_pc[INDEX_BITS+1:2];
     wire [INDEX_BITS-1:0] update_idx = update_pc[INDEX_BITS+1:2];
+    
+    assign predict_dir = bht[read_idx][1]; // MSB is the prediction
+    
 endmodule
