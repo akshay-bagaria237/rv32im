@@ -16,4 +16,14 @@ module l1_cache #(
     output reg [31:0] evict_addr,
     output reg [31:0] evict_data
 );
+    wire [1:0]  index = addr[3:2];
+    wire [27:0] tag   = addr[31:4];
+    
+    reg [31:0] data_array  [0:SETS-1][0:WAYS-1];
+    reg [27:0] tag_array   [0:SETS-1][0:WAYS-1];
+    reg        valid_array [0:SETS-1][0:WAYS-1];
+    reg        dirty_array [0:SETS-1][0:WAYS-1];
+
+    reg [1:0] replace_ptr [0:SETS-1];
+
 endmodule
