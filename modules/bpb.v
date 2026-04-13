@@ -21,4 +21,11 @@ module bpb #(
     
     assign predict_dir = bht[read_idx][1]; // MSB is the prediction
     
+    integer i;
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            for (i=0; i<NUM_ENTRIES; i=i+1) begin
+                bht[i] <= 2'b01; // Weakly not taken
+            end
+    end
 endmodule
