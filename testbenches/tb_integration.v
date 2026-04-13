@@ -118,4 +118,62 @@ module tb_bpb_cache;
 
 
         // ------------------------------------------
+        // PHASE 2: L1 CACHE COMMON & EDGE CASES
+        // ------------------------------------------
+        l1_addr = 32'h0000_4004; l1_re = 1; l1_we = 0; #10;
+        run_test("Test 10: L1 Cache Base Read Miss", 32'h0, l1_hit);
+
+        l1_wdata = 32'hCAFE_BABE; l1_we = 1; l1_re = 0; #10; l1_we = 0; l1_re = 1; #10;
+        run_test("Test 11: L1 Cache Write triggers Hit", 32'h1, l1_hit);
+        run_test("Test 12: L1 Cache Provides valid Read Data", 32'hCAFE_BABE, l1_rdata);
+
+        // Edge Case: Tag Mismatch Eviction (Same 7-bit index, diff tag)
+        l1_addr = 32'h0000_8004; #10;
+        run_test("Test 13: L1 Cache safely misses on Tag Collision (Eviction required)", 32'h0, l1_hit);
+
+        l1_wdata = 32'hDEAD_BEEF; l1_we = 1; l1_re = 0; #10; l1_we = 0; l1_re = 1; #10;
+        run_test("Test 14: L1 Cache safely evicts/overwrites collided tags", 32'h1, l1_hit);
+        run_test("Test 15: L1 Cache provides newly written data", 32'hDEAD_BEEF, l1_rdata);
+
+
+        // ------------------------------------------
+        // PHASE 3: L2 CACHE COMMON & HIERARCHICAL EDGE CASES
+        // ------------------------------------------
+        l2_addr = 32'h0000_4004; l2_re = 1; l2_we = 0; #10;
+        run_test("Test 16: L2 Cache Base Read Miss", 32'h0, l2_hit);
+
+        // Edge Case: L1 and L2 Write-Through Sim
+        l1_addr = 32'h0000_1000; l2_addr = 32'h0000_1000;
+        l1_wdata = 32'h1111_1111; l2_wdata = 32'h1111_1111;
+        l1_we = 1; l2_we = 1; l1_re = 0; l2_re = 0; #10;
+        l1_we = 0; l2_we = 0; l1_re = 1; l2_re = 1; #10;
+        run_test("Test 17: Multi-tier Cache L1 Write-Through checks out", 32'h1, l1_hit);
+        run_test("Test 18: Multi-tier Cache L2 Write-Through checks out", 32'h1, l2_hit);
+
+        // EXTRA EDGE CASE: Capacity/Scale discrepancy between L1 vs L2!
+        // Addr A = 0x1000 (L1 Idx 0, L2 Idx 0)
+        // Addr B = 0x1200 (L1 Idx 0, L2 Idx 128) -> Causes L1 eviction, but lives happily alongside in L2!
+        l1_addr = 32'h0000_1200; l2_addr = 32'h0000_1200;
+        l1_wdata = 32'h2222_2222; l2_wdata = 32'h2222_2222;
+        l1_we = 1; l2_we = 1; l1_re = 0; l2_re = 0; #10;
+        l1_we = 0; l2_we = 0; l1_re = 1; l2_re = 1;
+        
+        // Go back to reading Addr A
+        l1_addr = 32'h0000_1000; l2_addr = 32'h0000_1000; #10;
+
+        run_test("Test 19: L1 Evicts Addr A due to indexing limits (Capacity Max)", 32'h0, l1_hit);
+        run_test("Test 20: L2 Retains Addr A perfectly due to deep indexing (512 lines)", 32'h1, l2_hit);
+        run_test("Test 21: L2 Outputs safely recovered data for L1", 32'h1111_1111, l2_rdata);
+
+        // Edge Case: Absolute Upper Memory Bounds (0xFFFF_FFF0)
+        l1_addr = 32'hFFFF_FFF0; l2_addr = 32'hFFFF_FFF0; #10;
+        run_test("Test 22: FFFF Bounds correctly assessed as cache misses across L1", 32'h0, l1_hit);
+        run_test("Test 23: FFFF Bounds correctly assessed as cache misses across L2", 32'h0, l2_hit);
+
+
+        $display("========================================");
+        $display("  TESTS COMPLETED: %0d PASSED, %0d FAILED ", pass_count, fail_count);
+        $display("========================================");
+        $finish;
+    end
 endmodule
