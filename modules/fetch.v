@@ -36,7 +36,23 @@ wire l1_hit;
 wire [31:0] l1_rdata;
 wire [31:0] instruction_rom = imem[pc[11:2]];
 
-wire [31:0] fetch_instruction = instruction_rom;
+// L1 Instruction Cache (128 lines)
+l1_cache icache (
+    .clk(clk),
+    .rst(~reset),
+    .addr(pc),
+    .wdata(instruction_rom),       // Load from BRAM on miss
+    .we(~l1_hit && !flush),  // Write on L1 miss
+    .re(1'b1),
+    .rdata(l1_rdata),
+    .hit(l1_hit),
+    .dirty_evict(),
+    .evict_addr(),
+    .evict_data()
+);
+
+// If caches miss, fetch from instruction_rom (BRAM)
+wire [31:0] fetch_instruction = l1_hit ? l1_rdata : instruction_rom;
 
 // Wait, reset is active low (!reset). So req = 1 when running
 assign current_pc = pc;
