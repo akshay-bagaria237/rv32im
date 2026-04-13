@@ -48,4 +48,19 @@ module fpu(
         reg [4:0] mask_shift;
         reg [23:0] frac_mask;
         reg [23:0] mant_mask;
+        reg [23:0] full_mant;
+        reg [23:0] m_int;
+        reg [23:0] m_frac;
+        reg round_up;
+        reg [23:0] half;
+        reg [24:0] m_added;
+        begin
+            r_sign = a[31];
+            r_exp = a[30:23];
+            r_mant = a[22:0];
+            compute_round = a; // default to identity
+            
+            if (r_exp == 8'hFF) begin // NaN or Inf
+                if (r_mant != 0) begin
+                    compute_round = {r_sign, 8'hFF, 1'b1, 22'b0}; // Canonicalize Quiet NaN payload
 endmodule
