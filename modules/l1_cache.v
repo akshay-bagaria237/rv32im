@@ -52,4 +52,24 @@ module l1_cache #(
         end
     end
 
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            for (i = 0; i < SETS; i = i + 1) begin
+                replace_ptr[i] <= 0;
+                for (j = 0; j < WAYS; j = j + 1) begin
+                    valid_array[i][j] <= 0;
+                    dirty_array[i][j] <= 0;
+                end
+            end
+        end else begin
+            dirty_evict <= 0;
+            if (we && hit) begin
+                if (hit0) begin data_array[index][0] <= wdata; dirty_array[index][0] <= 1; end
+                else if (hit1) begin data_array[index][1] <= wdata; dirty_array[index][1] <= 1; end
+                else if (hit2) begin data_array[index][2] <= wdata; dirty_array[index][2] <= 1; end
+                else if (hit3) begin data_array[index][3] <= wdata; dirty_array[index][3] <= 1; end
+            end 
+            else if ((we || re) && !hit) begin
+        end
+    end
 endmodule
