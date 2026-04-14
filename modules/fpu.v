@@ -78,6 +78,21 @@ module fpu(
                     if (r_exp == 0 && r_mant == 0) begin
                         compute_round = {r_sign, 31'b0}; // +/- 0.0
                     end else begin
+                        compute_round = r_sign ? {r_sign, 31'b0} : 32'h3F800000; // +/-0.0 or 1.0
+                    end
+                end else if (op == 4'd4) begin // ROUND
+                    if (r_exp == 8'd126 && r_mant != 0) begin
+                        // > 0.5 -> 1.0
+                        compute_round = {r_sign, 8'd127, 23'd0}; // +/- 1.0
+                    end else if (r_exp == 8'd126 && r_mant == 0) begin
+                        // == 0.5 -> 0.0 (tie to even, 0 is even)
+                        compute_round = {r_sign, 31'b0};
+                    end else begin
+                        // < 0.5 -> 0.0
+                        compute_round = {r_sign, 31'b0};
+                    end
+                end
+            end else if (r_exp >= 8'd150) begin
         end
     endfunction
 endmodule
