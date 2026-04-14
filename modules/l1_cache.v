@@ -39,4 +39,17 @@ module l1_cache #(
                    hit2 ? data_array[index][2] :
                    hit3 ? data_array[index][3] : 32'h0;
 
+    integer i, j;
+    initial begin
+        for (i = 0; i < SETS; i = i + 1) begin
+            replace_ptr[i] = 0;
+            for (j = 0; j < WAYS; j = j + 1) begin
+                valid_array[i][j] = 0;
+                dirty_array[i][j] = 0;
+                tag_array[i][j] = 0;
+                data_array[i][j] = 0;
+            end
+        end
+    end
+
 endmodule
