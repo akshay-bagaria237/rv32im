@@ -73,6 +73,9 @@ always @(*) begin
         BRANCH: immediate = {{19{instruction_in[31]}}, instruction_in[31], instruction_in[7], instruction_in[30:25], instruction_in[11:8], 1'b0};
         LUI, AUIPC: immediate = {instruction_in[31:12], 12'b0};
         JAL:    immediate = {{11{instruction_in[31]}}, instruction_in[31], instruction_in[19:12], instruction_in[20], instruction_in[30:21], 1'b0};
+        ARITHR, OP_FP: immediate = 32'h0;
+        default: if (valid_in && instruction_in != NOP) illegal_inst = 1'b1;
+    endcase
 end
 
 reg alu_src, mem_write, mem_read, mem_to_reg, reg_write, branch, jal, jalr, lui, auipc, is_m_ext, is_fpu_ext;
@@ -93,6 +96,12 @@ always @(*) begin
             reg_write = 1; 
             if (funct7 == FUNC7_M) is_m_ext = 1; 
         end
+        OP_FP: begin
+            reg_write = 1;
+            is_fpu_ext = 1;
+        end
+        default: ;
+    endcase
 end
 
 always @(posedge clk or negedge reset) begin
