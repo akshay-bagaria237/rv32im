@@ -63,4 +63,21 @@ module fpu(
             if (r_exp == 8'hFF) begin // NaN or Inf
                 if (r_mant != 0) begin
                     compute_round = {r_sign, 8'hFF, 1'b1, 22'b0}; // Canonicalize Quiet NaN payload
+                end else begin
+                    compute_round = a; // +/- Infinity stays unmodified
+                end
+            end else if (r_exp < 8'd127) begin
+                // Absolute value < 1.0
+                if (op == 4'd2) begin // FLOOR
+                    if (r_exp == 0 && r_mant == 0) begin
+                        compute_round = {r_sign, 31'b0}; // +/- 0.0
+                    end else begin
+                        compute_round = r_sign ? 32'hBF800000 : {r_sign, 31'b0}; // -1.0 or +/-0.0
+                    end
+                end else if (op == 4'd3) begin // CEIL
+                    if (r_exp == 0 && r_mant == 0) begin
+                        compute_round = {r_sign, 31'b0}; // +/- 0.0
+                    end else begin
+        end
+    endfunction
 endmodule
