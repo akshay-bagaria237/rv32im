@@ -70,6 +70,19 @@ module l1_cache #(
                 else if (hit3) begin data_array[index][3] <= wdata; dirty_array[index][3] <= 1; end
             end 
             else if ((we || re) && !hit) begin
+                // MISS: Evict and Allocate
+                if (valid_array[index][replace_ptr[index]] && dirty_array[index][replace_ptr[index]]) begin
+                    dirty_evict <= 1;
+                    evict_addr <= {tag_array[index][replace_ptr[index]], index, 2'b00};
+                    evict_data <= data_array[index][replace_ptr[index]];
+                end
+                
+                valid_array[index][replace_ptr[index]] <= 1;
+                tag_array[index][replace_ptr[index]]   <= tag;
+                data_array[index][replace_ptr[index]]  <= wdata;
+                dirty_array[index][replace_ptr[index]] <= we;
+                replace_ptr[index] <= replace_ptr[index] + 1;
+            end
         end
     end
 endmodule
