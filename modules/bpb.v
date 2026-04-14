@@ -27,5 +27,13 @@ module bpb #(
             for (i=0; i<NUM_ENTRIES; i=i+1) begin
                 bht[i] <= 2'b01; // Weakly not taken
             end
+        end else if (update_en) begin
+            case (bht[update_idx])
+                2'b00: bht[update_idx] <= update_dir ? 2'b01 : 2'b00;
+                2'b01: bht[update_idx] <= update_dir ? 2'b10 : 2'b00;
+                2'b10: bht[update_idx] <= update_dir ? 2'b11 : 2'b01;
+                2'b11: bht[update_idx] <= update_dir ? 2'b11 : 2'b10;
+            endcase
+        end
     end
 endmodule
