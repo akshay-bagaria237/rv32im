@@ -93,6 +93,26 @@ module fpu(
                     end
                 end
             end else if (r_exp >= 8'd150) begin
+                // Fractional bits are already outside the 23-bit mantissa
+                compute_round = a;
+            end else begin
+                // Normal range with fractional bits inside mantissa (127 <= r_exp < 150)
+                mask_shift = 8'd150 - r_exp; 
+                frac_mask = ~(24'hFFFFFF << mask_shift);
+                mant_mask = ~frac_mask;
+                full_mant = {1'b1, r_mant};
+                m_int  = full_mant & mant_mask;
+                m_frac = full_mant & frac_mask;
+                
+                if (m_frac != 0) begin
+                    round_up = 1'b0;
+                    if (op == 4'd2) begin // FLOOR
+                        if (r_sign) round_up = 1'b1;
+                    end else if (op == 4'd3) begin // CEIL
+                        if (!r_sign) round_up = 1'b1;
+                    end else if (op == 4'd4) begin // ROUND
+                        half = 24'd1 << (mask_shift - 1);
+                        if (m_frac > half) round_up = 1'b1;
         end
     endfunction
 endmodule
