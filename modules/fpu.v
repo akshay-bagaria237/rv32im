@@ -113,6 +113,25 @@ module fpu(
                     end else if (op == 4'd4) begin // ROUND
                         half = 24'd1 << (mask_shift - 1);
                         if (m_frac > half) round_up = 1'b1;
+                        else if (m_frac < half) round_up = 1'b0;
+                        else round_up = (m_int >> mask_shift) & 1'b1;
+                    end
+                    
+                    if (round_up) begin
+                        m_added = m_int + (25'd1 << mask_shift);
+                        if (m_added[24]) begin
+                            compute_round = {r_sign, r_exp + 1'b1, m_added[23:1]};
+                        end else begin
+                            compute_round = {r_sign, r_exp, m_added[22:0]};
+                        end
+                    end else begin
+                        compute_round = {r_sign, r_exp, m_int[22:0]};
+                    end
+                end else begin
+                    compute_round = a;
+                end
+            end
         end
+    endfunction
     endfunction
 endmodule
