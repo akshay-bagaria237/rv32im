@@ -108,4 +108,83 @@ module tb_pipeline_timing;
                                 3'b111: mnem = "and";
                             endcase
                         end
+                        $swrite(get_instr_str, "%s x%0d, x%0d, x%0d", mnem, rd, rs1, rs2);
+                    end
+                    7'b1100011: begin // BRANCH
+                        imm = {{19{instr[31]}}, instr[31], instr[7], instr[30:25], instr[11:8], 1'b0};
+                        case (f3)
+                            3'b000: mnem = "beq";
+                            3'b001: mnem = "bne";
+                            3'b100: mnem = "blt";
+                            3'b101: mnem = "bge";
+                            3'b110: mnem = "bltu";
+                            3'b111: mnem = "bgeu";
+                        endcase
+                        $swrite(get_instr_str, "%s x%0d, x%0d, %0d", mnem, rs1, rs2, $signed(imm));
+                    end
+                    default: $swrite(get_instr_str, "unknown (0x%h)", instr);
+                endcase
+            end
+        end
+    endfunction
+
+    integer cycle;
+    integer i;
+    
+    initial begin
+        // Load imem for the DUT and for our lookup
+        $readmemh("imem.hex", dut.u_fetch.imem);
+        $readmemh("imem.hex", imem);
+        
+        reset = 0;
+        stall = 0;
+        cycle = 0;
+        #15 reset = 1;
+        
+        $display("\n======================================================================== PIPELINE TIMING LOG ========================================================================");
+        $display("%-6s | %-8s | %-20s | %-20s | %-20s | %-20s | %-20s | %-7s | %-4s | %-15s", 
+                 "Cycle", "PC", "FETCH", "DECODE", "EXECUTE", "MEMORY", "WRITEBACK", "S:I/D/E", "Fwd", "WB_Result");
+        $display("-------|----------|----------------------|----------------------|----------------------|----------------------|----------------------|---------|------|----------------");
+        
+        // Run for 100 cycles to cover the long DIV stall and branch
+        repeat (100) begin
+            @(posedge clk);
+            #1; // Wait for signals to settle
+            
+            $write("%-6d | %08h | ", cycle, dut.u_fetch.current_pc);
+            
+            // FETCH
+            $write("%-20s | ", get_instr_str(dut.u_fetch.imem[dut.u_fetch.pc[11:2]]));
+            
+            // DECODE
+            $write("%-20s | ", dut.if_valid ? get_instr_str(dut.if_instruction) : "bubble");
+            
+            // EXECUTE
+            $write("%-20s | ", dut.id_valid ? get_instr_str(imem[dut.id_pc >> 2]) : "bubble");
+            
+            // MEMORY
+            $write("%-20s | ", dut.ex_valid ? get_instr_str(imem[(dut.ex_pc_plus4-4) >> 2]) : "bubble");
+            
+            // WRITEBACK
+            $write("%-20s | ", dut.mem_valid ? get_instr_str(imem[(dut.mem_pc_plus4-4) >> 2]) : "bubble");
+            
+            // Stall/Flush
+            $write("S:%b%b%b | ", 
+                dut.stall_if, dut.stall_id, dut.stall_ex);
+                
+            // Forwarding
+            $write("%b%b | ", dut.f_a, dut.f_b);
+            
+            // WB Result
+            if (dut.wb_reg_write_en && dut.wb_rd_addr != 0) 
+                $write("x%-2d = %08h", dut.wb_rd_addr, dut.wb_rd_data);
+            
+            $display("");
+            cycle = cycle + 1;
+        end
+        
+        $display("=====================================================================================================================================================================\n");
+        $finish;
+    end
+
 endmodule
