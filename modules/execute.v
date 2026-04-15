@@ -97,6 +97,8 @@ wire fpu_kick_start = is_fpu_ext_in && !fpu_started && valid_in && !flush;
 // Invert reset for modules that expect active-high reset
 wire rst_high = ~reset;
 
+multiplier u_multiplier (.operand1(alu_operand1), .operand2(alu_operand2_reg), .funct3(funct3_in), .result(mul_result));
+divider u_divider (.clk(clk), .reset(rst_high), .start(div_kick_start), .operand1(alu_operand1), .operand2(alu_operand2_reg), .funct3(funct3_in), .result(div_result), .busy(div_busy));
 
 always @(posedge clk or negedge reset) begin
     if (!reset || flush) begin 
