@@ -15,4 +15,27 @@ wire [31:0] pc_display;
 wire [31:0] led_display;
 wire exception;
 
+// PC shown on LEDs for progress tracking
+assign led = pc_display[15:0]; 
+
+reg [25:0] clk_div;
+always @(posedge clk or negedge reset) begin
+    if (!reset) clk_div <= 0;
+    else clk_div <= clk_div + 1;
+end
+
+wire slow_clk;
+BUFG bufg_inst (
+    .I(clk_div[23]),  // ~12 Hz
+    .O(slow_clk)
+);
+
+wire [31:0] l1_hit_cnt, l1_miss_cnt, cycle_cnt;
+
+pipe pipe_u (
+    .clk(slow_clk), .reset(reset), .stall(1'b0), .sw(sw),
+    .exception(exception), .pc_out(pc_display), .led_out(led_display),
+    .l1_hit_count(l1_hit_cnt), .l1_miss_count(l1_miss_cnt), .cycle_count(cycle_cnt)
+);
+
 endmodule
