@@ -133,5 +133,19 @@ module fpu(
             end
         end
     endfunction
-    endfunction
+    
+    wire [31:0] round_res = compute_round(a, op);
+
+    // Priority encoder to find leading 1 in 1 clock cycle for NORM
+    integer i;
+    always @(*) begin
+        shift_amt = 24;
+        for (i = 23; i >= 0; i = i - 1) begin
+            if (mant_res[i] && shift_amt == 24) begin
+                shift_amt = 23 - i;
+            end
+        end
+        shifted_mant = mant_res << shift_amt;
+    end
+    
 endmodule
