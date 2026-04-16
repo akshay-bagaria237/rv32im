@@ -163,4 +163,14 @@ module fpu(
     wire a_eq_b_mag = (a[30:0] == b[30:0]);
 
     wire a_eq_b = (is_nan_a || is_nan_b) ? 1'b0 : 
+                  (is_zero_a && is_zero_b) ? 1'b1 :
+                  (a == b);
+
+    wire a_lt_b = (is_nan_a || is_nan_b) ? 1'b0 :
+                  (is_zero_a && is_zero_b) ? 1'b0 :
+                  (a[31] != b[31]) ? (a[31] == 1'b1) :
+                  (a[31] == 1'b0) ? a_lt_b_mag : (!a_lt_b_mag && !a_eq_b_mag);
+
+    wire a_le_b = a_lt_b || a_eq_b;
+
 endmodule
