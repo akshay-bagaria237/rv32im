@@ -148,4 +148,19 @@ module fpu(
         shifted_mant = mant_res << shift_amt;
     end
     
+    // -------------------------------------------------------------------------
+    // Combinational min/max/compare logic
+    // -------------------------------------------------------------------------
+    wire is_nan_a = (a[30:23] == 8'hFF) && (a[22:0] != 23'd0);
+    wire is_nan_b = (b[30:23] == 8'hFF) && (b[22:0] != 23'd0);
+    wire is_snan_a = is_nan_a && (a[22] == 1'b0);
+    wire is_snan_b = is_nan_b && (b[22] == 1'b0);
+    
+    wire is_zero_a = (a[30:0] == 31'd0);
+    wire is_zero_b = (b[30:0] == 31'd0);
+
+    wire a_lt_b_mag = (a[30:0] < b[30:0]);
+    wire a_eq_b_mag = (a[30:0] == b[30:0]);
+
+    wire a_eq_b = (is_nan_a || is_nan_b) ? 1'b0 : 
 endmodule
