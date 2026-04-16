@@ -38,4 +38,48 @@ pipe pipe_u (
     .l1_hit_count(l1_hit_cnt), .l1_miss_count(l1_miss_cnt), .cycle_count(cycle_cnt)
 );
 
+// Multiplexing logic for 8 digits
+reg [2:0] seg_sel;
+always @(posedge clk or negedge reset) begin
+    if (!reset) seg_sel <= 0;
+    else if (clk_div[16:0] == 0) seg_sel <= seg_sel + 1;
+end
+
+reg [3:0] hex_digit;
+wire [15:0] metrics_val = (sw[1:0] == 2'b00) ? l1_hit_cnt[15:0]  :
+                          (sw[1:0] == 2'b01) ? l1_miss_cnt[15:0] :
+                          (sw[1:0] == 2'b10) ? (l1_hit_cnt[15:0] + l1_miss_cnt[15:0]) :
+                                               cycle_cnt[15:0];
+
+always @(*) begin
+    an = 8'b11111111; // Default all OFF
+    hex_digit = 4'h0;
+    if (sw[2]) begin
+        // --- PROGRAM OUTPUT MODE (8 DIGITS) ---
+        an[seg_sel] = 1'b0; // Enable the current digit
+        case (seg_sel)
+            3'b000: hex_digit = led_display[3:0];
+            3'b001: hex_digit = led_display[7:4];
+            3'b010: hex_digit = led_display[11:8];
+            3'b011: hex_digit = led_display[15:12];
+            3'b100: hex_digit = led_display[19:16];
+            3'b101: hex_digit = led_display[23:20];
+            3'b110: hex_digit = led_display[27:24];
+            3'b111: hex_digit = led_display[31:28];
+        endcase
+    end else begin
+        // --- METRICS MODE (LOWER 4 DIGITS ONLY) ---
+        if (seg_sel < 4) begin
+            an[seg_sel] = 1'b0;
+            case (seg_sel)
+                3'b000: hex_digit = metrics_val[3:0];
+                3'b001: hex_digit = metrics_val[7:4];
+                3'b010: hex_digit = metrics_val[11:8];
+                3'b011: hex_digit = metrics_val[15:12];
+                default: hex_digit = 4'h0;
+            endcase
+        end
+    end
+end
+
 endmodule
