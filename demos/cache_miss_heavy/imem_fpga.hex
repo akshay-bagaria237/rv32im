@@ -1,0 +1,22 @@
+00000093 // addi x1, x0, 0
+0000a103 // lw x2, 0x000(x1) - MISS
+00000013 // nop
+0100a103 // lw x2, 0x010(x1) - MISS
+00000013 // nop
+0200a103 // lw x2, 0x020(x1) - MISS
+00000013 // nop
+0300a103 // lw x2, 0x030(x1) - MISS (Set 0 Full)
+00000013 // nop
+0400a103 // lw x2, 0x040(x1) - MISS (Conflict)
+00000013 // nop
+0000a103 // lw x2, 0x000(x1) - MISS (Conflict)
+00000013 // nop
+0100a103 // lw x2, 0x010(x1) - MISS (Conflict)
+00000013 // nop
+0200a103 // lw x2, 0x020(x1) - MISS (Conflict)
+00000013 // nop
+0300a103 // lw x2, 0x030(x1) - MISS
+00000013 // nop
+0400a103 // lw x2, 0x040(x1) - MISS
+00000013 // nop
+0000006f // HALT
