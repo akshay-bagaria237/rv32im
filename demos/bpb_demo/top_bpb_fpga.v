@@ -33,4 +33,33 @@ module top_bpb_fpga #(
     end
     wire step_edge = (step_reg_sync && !step_reg_prev); // Rising edge detection
 
+    // ROM and Counters
+    reg [8:0] trace_addr;
+    wire [31:0] trace_pc;
+    wire trace_outcome;
+    reg [15:0] hit_count;
+    reg [15:0] total_count;
+    
+    trace_rom rom_u (
+        .addr(trace_addr),
+        .pc(trace_pc),
+        .outcome(trace_outcome)
+    );
+
+    // BPB instantiation
+    wire predict_dir;
+    reg update_en;
+    
+    bpb #(
+        .INDEX_BITS(INDEX_BITS)
+    ) bpb_u (
+        .clk(clk),
+        .rst(rst),
+        .read_pc(trace_pc),
+        .predict_dir(predict_dir),
+        .update_pc(trace_pc),
+        .update_en(update_en),
+        .update_dir(trace_outcome)
+    );
+
 endmodule
