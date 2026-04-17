@@ -203,4 +203,37 @@ module fpu(
                           (f2i_shift <= 31) ? (f2i_mant << (f2i_shift - 23)) : 32'hFFFFFFFF;
                           
     wire over_pos_s = !f2i_sign && (f2i_shift >= 31);
+    wire over_neg_s = f2i_sign && (f2i_shift > 31 || (f2i_shift == 31 && a[22:0] != 0));
+    
+    wire [31:0] f2i_signed_res = 
+        (is_nan_a || over_pos_s) ? 32'h7FFFFFFF :
+        (over_neg_s) ? 32'h80000000 :
+        (f2i_sign ? (~f2i_abs + 1) : f2i_abs);
+        
+    wire over_pos_u = !f2i_sign && (f2i_shift >= 32);
+    wire over_neg_u = f2i_sign && (f2i_shift >= 0 && f2i_abs != 0);
+    
+    wire [31:0] f2i_unsigned_res = 
+        (is_nan_a || over_pos_u) ? 32'hFFFFFFFF :
+        (over_neg_u) ? 32'b0 :
+        f2i_abs;
+    
+    // Int-to-Float (fcvt.s.w = op14, fcvt.s.wu = op15)
+    wire i2f_is_signed = (op == 4'd14);
+    wire i2f_sign = i2f_is_signed && a[31];
+    wire [31:0] i2f_abs = (i2f_sign) ? (~a + 1) : a;
+    
+    reg [4:0] i2f_lz; // Leading zeros
+    integer j;
+    always @(*) begin
+        i2f_lz = 31;
+        for (j = 31; j >= 0; j = j - 1) begin
+            if (i2f_abs[j] && i2f_lz == 31) begin
+                i2f_lz = 31 - j;
+            end
+        end
+    end
+    
+    wire [7:0] i2f_exp = (i2f_abs == 0) ? 8'd0 : (8'd127 + 8'd31 - {3'b0, i2f_lz});
+    
 endmodule
