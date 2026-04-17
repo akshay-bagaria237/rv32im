@@ -18,4 +18,24 @@ module top_fpga #(
 //////////////////////////////////////////////////////////////
 // Drive the board LEDs from the CPU PC
 //////////////////////////////////////////////////////////////
+wire [31:0] pc_display;
+wire [31:0] led_display;
+wire exception;
+assign led = pc_display[15:0]; // Show lower 16 bits of PC on LEDs
+
+//////////////////////////////////////////////////////////////
+// Clock Divider for FPGA observation (approx 1 Hz to 2 Hz with 100MHz clock)
+//////////////////////////////////////////////////////////////
+reg [25:0] clk_div;
+always @(posedge clk or negedge reset) begin
+    if (!reset) begin
+        clk_div <= 0;
+    end else begin
+        clk_div <= clk_div + 1;
+    end
+end
+
+// Use a Global Clock Buffer (BUFG) for the slow clock 
+// to ensure it routes cleanly on the FPGA clock tree, 
+// avoiding clock skew that can cause erratic/fast glitches.
 endmodule
