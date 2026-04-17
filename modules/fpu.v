@@ -236,4 +236,22 @@ module fpu(
     
     wire [7:0] i2f_exp = (i2f_abs == 0) ? 8'd0 : (8'd127 + 8'd31 - {3'b0, i2f_lz});
     
+    wire [4:0] shift_left_amt = i2f_lz - 5'd8;
+    wire [4:0] shift_right_amt = 5'd8 - i2f_lz;
+    
+    wire [31:0] i2f_shifted_raw = (i2f_lz <= 8) ? (i2f_abs >> shift_right_amt) : (i2f_abs << shift_left_amt);
+    
+    // Int-to-Float Round to Nearest Even (RNE)
+    wire [7:0] i2f_dropped_mask = (1 << shift_right_amt) - 1;
+    wire [7:0] i2f_dropped = (i2f_lz < 8) ? (i2f_abs[7:0] & i2f_dropped_mask) : 8'b0;
+    wire [7:0] i2f_half    = (i2f_lz < 8) ? (1 << (shift_right_amt - 1)) : 8'b0;
+    
+    wire i2f_round_up = (i2f_dropped > i2f_half) || (i2f_dropped == i2f_half && i2f_shifted_raw[0]);
+    wire [23:0] i2f_mant_rounded = i2f_shifted_raw[22:0] + i2f_round_up;
+    
+    wire [7:0] i2f_exp_final = (i2f_abs == 0) ? 8'd0 : i2f_exp + i2f_mant_rounded[23];
+    wire [22:0] i2f_mant_final = i2f_mant_rounded[23] ? 23'b0 : i2f_mant_rounded[22:0];
+    
+    wire [31:0] i2f_res = (i2f_abs == 0) ? 32'b0 : {i2f_sign, i2f_exp_final, i2f_mant_final};
+
 endmodule
