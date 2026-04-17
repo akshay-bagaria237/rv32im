@@ -1,0 +1,30 @@
+// --- RISC-V CACHE DEMO: 50 ACCESSES MIXED PATTERN ---
+// CACHE CONFIG: 4-Way Associative, 4 Sets.
+// INDEX = Addr[3:2], TAG = Addr[31:4]
+// SET 0: Addr 0x00, 0x10, 0x20, 0x30, 0x40 ...
+// SET 1: Addr 0x04, 0x14, 0x24 ...
+// SET 2: Addr 0x08, 0x18, 0x28 ...
+// SET 3: Addr 0x0C, 0x1C, 0x2C ...
+
+00000093 // addi x1, x0, 0 (Base Addr)
+
+// --- PHASE 1: COMPULSORY MISSES (Total Access: 1-8) ---
+0000a203 // 1. lw x4, 0(x1)   - SET 0, TAG 0 -> MISS (Compulsory)
+00000013 // nop
+0000a203 // 2. lw x4, 0(x1)   - SET 0, TAG 0 -> HIT
+0040a203 // 3. lw x4, 4(x1)   - SET 1, TAG 0 -> MISS (Compulsory)
+00000013 // nop
+0040a203 // 4. lw x4, 4(x1)   - SET 1, TAG 0 -> HIT
+0080a203 // 5. lw x4, 8(x1)   - SET 2, TAG 0 -> MISS (Compulsory)
+00000013 // nop
+0080a203 // 6. lw x4, 8(x1)   - SET 2, TAG 0 -> HIT
+00c0a203 // 7. lw x4, 12(x1)  - SET 3, TAG 0 -> MISS (Compulsory)
+00000013 // nop
+00c0a203 // 8. lw x4, 12(x1)  - SET 3, TAG 0 -> HIT
+
+// --- PHASE 2: CONFLICT STRESS ON SET 0 (Total Access: 9-18) ---
+// Set 0 currently has TAG 0. Ways 1, 2, 3 are empty.
+0100a203 // 9.  lw x4, 0x10(x1) - SET 0, TAG 1 -> MISS (Compulsory)
+00000013 // nop
+0200a203 // 10. lw x4, 0x20(x1) - SET 0, TAG 2 -> MISS (Compulsory)
+00000013 // nop
