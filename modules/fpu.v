@@ -173,4 +173,18 @@ module fpu(
 
     wire a_le_b = a_lt_b || a_eq_b;
 
+    wire min_max_ret_canonical = (is_nan_a && is_nan_b) || is_snan_a || is_snan_b;
+
+    wire [31:0] fmin_res = min_max_ret_canonical ? 32'h7FC00000 : 
+                           (is_nan_a) ? b :
+                           (is_nan_b) ? a :
+                           (is_zero_a && is_zero_b) ? ((a[31] == 1'b1) ? a : b) : 
+                           (a_lt_b) ? a : b;
+
+    wire [31:0] fmax_res = min_max_ret_canonical ? 32'h7FC00000 : 
+                           (is_nan_a) ? b :
+                           (is_nan_b) ? a :
+                           (is_zero_a && is_zero_b) ? ((a[31] == 1'b0) ? a : b) : 
+                           (a_lt_b) ? b : a;
+
 endmodule
