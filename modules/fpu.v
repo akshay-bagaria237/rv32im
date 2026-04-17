@@ -187,4 +187,20 @@ module fpu(
                            (is_zero_a && is_zero_b) ? ((a[31] == 1'b0) ? a : b) : 
                            (a_lt_b) ? b : a;
 
+    // -------------------------------------------------------------------------
+    // Combinational float-to-int and int-to-float logic
+    // -------------------------------------------------------------------------
+
+    // Float-to-Int (fcvt.w.s = op12, fcvt.wu.s = op13)
+    wire [8:0] f2i_exp = {1'b0, a[30:23]};
+    wire f2i_sign = a[31];
+    wire [31:0] f2i_mant = {8'b0, 1'b1, a[22:0]}; // implicit 1 at bit 23
+    wire signed [9:0] f2i_shift = f2i_exp - 10'd127;
+    
+    // Default zero when shift is negative (less than 1.0)
+    wire [31:0] f2i_abs = (f2i_shift < 0) ? 32'b0 :
+                          (f2i_shift <= 23) ? (f2i_mant >> (23 - f2i_shift)) : 
+                          (f2i_shift <= 31) ? (f2i_mant << (f2i_shift - 23)) : 32'hFFFFFFFF;
+                          
+    wire over_pos_s = !f2i_sign && (f2i_shift >= 31);
 endmodule
