@@ -25,4 +25,12 @@ module top_bpb_fpga #(
     // Select trigger signal
     wire step_signal = sw[0] ? sw[1] : clk_div[23]; 
     
+    // Edge detection for the step signal
+    reg step_reg_sync, step_reg_prev;
+    always @(posedge clk) begin
+        step_reg_sync <= step_signal;
+        step_reg_prev <= step_reg_sync;
+    end
+    wire step_edge = (step_reg_sync && !step_reg_prev); // Rising edge detection
+
 endmodule
