@@ -83,7 +83,19 @@ wire [31:0] l1_rdata;
 wire [31:0] mem_baseline_read = dmem[dcache_addr[11:2]];
 
 // L1 Data Cache
-
+l1_cache dcache (
+    .clk(clk),
+    .rst(~reset),
+    .addr(dcache_addr),
+    .wdata(rs2_data_in),
+    .we(mem_write_in && valid_in && !is_mmio_write), 
+    .re(mem_read_in && valid_in && !is_mmio_read),
+    .rdata(l1_rdata),
+    .hit(l1_hit),
+    .dirty_evict(), 
+    .evict_addr(),
+    .evict_data()
+);
 
 // Memory Read (Combinatorial)
 wire [31:0] cache_or_mem_out = (l1_hit ? l1_rdata : mem_baseline_read);
