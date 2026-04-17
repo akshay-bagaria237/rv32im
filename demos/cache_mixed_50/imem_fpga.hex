@@ -28,3 +28,33 @@
 00000013 // nop
 0200a203 // 10. lw x4, 0x20(x1) - SET 0, TAG 2 -> MISS (Compulsory)
 00000013 // nop
+0300a203 // 11. lw x4, 0x30(x1) - SET 0, TAG 3 -> MISS (Compulsory)
+00000013 // nop
+// Set 0 is now FULL (Tags 0, 1, 2, 3). Next access causes eviction.
+0400a203 // 12. lw x4, 0x40(x1) - SET 0, TAG 4 -> MISS (Conflict! Kicks Tag 0)
+00000013 // nop
+0000a203 // 13. lw x4, 0x00(x1) - SET 0, TAG 0 -> MISS (Conflict! Kicks Tag 1)
+00000013 // nop
+0100a203 // 14. lw x4, 0x10(x1) - SET 0, TAG 1 -> MISS (Conflict! Kicks Tag 2)
+00000013 // nop
+0200a203 // 15. lw x4, 0x20(x1) - SET 0, TAG 2 -> MISS (Conflict! Kicks Tag 3)
+00000013 // nop
+0300a203 // 16. lw x4, 0x30(x1) - SET 0, TAG 3 -> MISS (Conflict! Kicks Tag 4)
+00000013 // nop
+0400a203 // 17. lw x4, 0x40(x1) - SET 0, TAG 4 -> MISS (Conflict! Kicks Tag 0)
+00000013 // nop
+0000a203 // 18. lw x4, 0x00(x1) - SET 0, TAG 0 -> MISS (Conflict)
+00000013 // nop
+
+// --- PHASE 3: LONG HIT STREAK (Total Access: 19-50) ---
+// We use x8 as a loop counter to reach 50 total accesses.
+01000413 // li x8, 16 (Loop 16 times * 2 accesses = 32 more)
+// loop: (PC = 0x58)
+0040a203 // Access (19 + 2n): lw x4, 4(x1) - SET 1, TAG 0 -> HIT (Still in cache)
+0080a203 // Access (20 + 2n): lw x4, 8(x1) - SET 2, TAG 0 -> HIT (Still in cache)
+fff40413 // addi x8, x8, -1
+fa041ee3 // bne x8, x0, loop (Offset -36)
+
+// --- HALT ---
+ffffffff // SIGNAL: END
+0000006f // j halt
