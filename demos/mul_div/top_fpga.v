@@ -83,4 +83,40 @@ always @(posedge clk or negedge reset) begin
     if (!reset) seg_sel <= 0;
     else if (clk_div[16:0] == 0) seg_sel <= seg_sel + 1; // Slow refresh rate for multiplexing
 end
+
+reg [3:0] hex_digit;
+always @(*) begin
+    an = 8'b11111111; // Default: all digits OFF (active low)
+    case (seg_sel)
+        2'b00: begin an[0] = 1'b0; hex_digit = value_to_display[3:0];   end
+        2'b01: begin an[1] = 1'b0; hex_digit = value_to_display[7:4];   end
+        2'b10: begin an[2] = 1'b0; hex_digit = value_to_display[11:8];  end
+        2'b11: begin an[3] = 1'b0; hex_digit = value_to_display[15:12]; end
+        default: hex_digit = 4'h0;
+    endcase
+end
+
+// Hex to 7-segment decoder (Active Low)
+always @(*) begin
+    case (hex_digit)
+        4'h0: seg = 7'b1000000; // 0
+        4'h1: seg = 7'b1111001; // 1
+        4'h2: seg = 7'b0100100; // 2
+        4'h3: seg = 7'b0110000; // 3
+        4'h4: seg = 7'b0011001; // 4
+        4'h5: seg = 7'b0010010; // 5
+        4'h6: seg = 7'b0000010; // 6
+        4'h7: seg = 7'b1111000; // 7
+        4'h8: seg = 7'b0000000; // 8
+        4'h9: seg = 7'b0010000; // 9
+        4'hA: seg = 7'b0001000; // A
+        4'hB: seg = 7'b0000011; // b
+        4'hC: seg = 7'b1000110; // C
+        4'hD: seg = 7'b0100001; // d
+        4'hE: seg = 7'b0000110; // E
+        4'hF: seg = 7'b0001110; // F
+        default: seg = 7'b1111111; 
+    endcase
+end
+
 endmodule
