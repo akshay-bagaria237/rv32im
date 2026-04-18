@@ -321,6 +321,27 @@ module fpu(
                         end
                         state <= NORM;
                     end else if (op == 4'd6) begin
+                        // FDIV Logic: Initialize shift-and-subtract parameters
+                        sign_res <= sign_a ^ sign_b;
+                        // 48-bit divided by 24-bit using restoring division
+                        div_A <= {mant_a, 23'b0}; // Correct 48-bit assignment
+                        div_P <= 48'b0;
+                        div_count <= 6'd48;
+                        state <= DIVIDE_LOOP;
+                    end else begin
+                        // FADD / FSUB logic: Align smaller mantissa
+                        if (exp_a > exp_b) begin
+                            mant_b <= (exp_diff_ab > 24) ? 25'b0 : (mant_b >> exp_diff_ab[4:0]);
+                            exp_res <= {1'b0, exp_a};
+                        end else if (exp_a < exp_b) begin
+                            mant_a <= (exp_diff_ba > 24) ? 25'b0 : (mant_a >> exp_diff_ba[4:0]);
+                            exp_res <= {1'b0, exp_b};
+                        end else begin
+                            exp_res <= {1'b0, exp_a};
+                        end
+                        state <= ADD;
+                    end
+                end
             endcase
         end
     end
