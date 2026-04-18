@@ -58,4 +58,29 @@ pipe pipe_u (
     .stall      (1'b0),
     .sw         (sw), // Pass slide switches into pipeline for MMIO reading
     .exception  (exception),
+    .pc_out     (pc_display),
+    .led_out    (led_display),
+    .l1_hit_count (l1_hit_cnt),
+    .l1_miss_count(l1_miss_cnt),
+    .cycle_count(cycle_cnt)
+);
+
+//////////////////////////////////////////////////////////////
+// 7-Segment Display Controller (Hexadecimal rendering)
+//////////////////////////////////////////////////////////////
+// Display mode:
+// If sw[2] is 1, display led_display (Program Output)
+// If sw[2] is 0, use sw[1:0] for metrics: 00->hits, 01->misses, 10->req, 11->cycles.
+wire [31:0] req_cnt = l1_hit_cnt + l1_miss_cnt;
+wire [15:0] value_to_display = (sw[2]) ? led_display[15:0] :
+                               (sw[1:0] == 2'b00) ? l1_hit_cnt[15:0]  :
+                               (sw[1:0] == 2'b01) ? l1_miss_cnt[15:0] :
+                               (sw[1:0] == 2'b10) ? req_cnt[15:0]     :
+                                                    cycle_cnt[15:0];
+
+reg [1:0] seg_sel;         // To select which of the 4 digits to refresh
+always @(posedge clk or negedge reset) begin
+    if (!reset) seg_sel <= 0;
+    else if (clk_div[16:0] == 0) seg_sel <= seg_sel + 1; // Slow refresh rate for multiplexing
+end
 endmodule
