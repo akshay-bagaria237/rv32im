@@ -62,4 +62,44 @@ module top_bpb_fpga #(
         .update_dir(trace_outcome)
     );
 
+    // State machine
+    reg [1:0] state;
+    localparam S_READ   = 2'd0;
+    localparam S_UPDATE = 2'd1;
+    localparam S_WAIT   = 2'd2;
+
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            trace_addr <= 0;
+            hit_count <= 0;
+            total_count <= 0;
+            update_en <= 0;
+            state <= S_WAIT;
+        end else begin
+            case (state)
+                S_WAIT: begin
+                    update_en <= 0;
+                    if (step_edge && total_count < 421) begin
+                        state <= S_READ;
+                    end
+                end
+                S_READ: begin
+                    // Check prediction before update
+                    if (predict_dir == trace_outcome) hit_count <= hit_count + 1;
+                    total_count <= total_count + 1;
+                    update_en <= 1; // Enable training
+                    state <= S_UPDATE;
+                end
+                S_UPDATE: begin
+                    update_en <= 0;
+                    trace_addr <= trace_addr + 1;
+                    state <= S_WAIT;
+                end
+            endcase
+        end
+    end
+
+    // Accuracy: (hit * 100) / total
+    wire [15:0] accuracy = (total_count == 0) ? 0 : (hit_count * 100) / total_count;
+    assign led = accuracy;
 endmodule
