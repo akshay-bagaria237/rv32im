@@ -58,4 +58,54 @@ module tb_pipeline_final;
             end
             $display("----------------------------------");
         end
+    endtask
+
+    initial begin
+        total_passed = 0;
+        total_failed = 0;
+        current_case = 0;
+
+        $display("====================================================");
+        $display("Starting Final Hardcore Pipeline Verification (40 Points)");
+        $display("====================================================\n");
+
+        wait (reset === 1);
+
+        // Wait for program completion marker (PC = 0xA0) with timeout guard.
+        wait_cycles = 0;
+        while (DUT.pc_out !== 32'h000000a0 && wait_cycles < 20000) begin
+            @(posedge clk);
+            wait_cycles = wait_cycles + 1;
+        end
+        if (DUT.pc_out !== 32'h000000a0) begin
+            $display("[ERROR] Timeout waiting for completion PC=0x000000A0 (last PC=0x%08h).", DUT.pc_out);
+            $finish;
+        end
+        repeat (10) @(posedge clk);
+
+        $display("\n========== VERIFICATION RESULTS ==========");
+
+        // 1-10: Arithmetic / Logic
+        verify("ADDI x1 = 100", 1, 32'd100);
+        verify("ADDI x2 = 50",  2, 32'd50);
+        verify("ADD  x3 = 150", 3, 32'd150);
+        verify("SUB  x4 = 50",  4, 32'd50);
+        verify("XOR  x5 = 86",  5, 32'd86);
+        verify("OR   x6 = 118", 6, 32'd118);
+        verify("AND  x7 = 36",  7, 32'd36);
+        verify("SLT  x8 = 1",   8, 32'd1);
+        verify("SLTU x9 = 1",   9, 32'd1);
+        verify("ADDI x10 = 2",  10, 32'd2);
+
+        // 11-14: Shifts
+        verify("SLL  x11 = 400", 11, 32'd400);
+        verify("SRL  x12 = 25",  12, 32'd25);
+        verify("ADDI x13 = -100", 13, 32'hFFFFFF9C);
+        verify("SRA  x14 = -25", 14, 32'hFFFFFFE7);
+
+        // 15-20: RV32M Extensions
+        verify("MUL  x15 = 5000", 15, 32'd5000);
+        verify("MULH x16 = 0",    16, 32'd0);
+        verify("DIV  x17 = 2",    17, 32'd2);
+        verify("REM  x18 = 0",    18, 32'd0);
 endmodule
