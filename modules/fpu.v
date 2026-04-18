@@ -254,4 +254,18 @@ module fpu(
     
     wire [31:0] i2f_res = (i2f_abs == 0) ? 32'b0 : {i2f_sign, i2f_exp_final, i2f_mant_final};
 
+    reg [31:0] fast_path_res;
+    always @(*) begin
+        case (op)
+            4'd7:  fast_path_res = fmin_res;
+            4'd8:  fast_path_res = fmax_res;
+            4'd9:  fast_path_res = {31'b0, a_eq_b};
+            4'd10: fast_path_res = {31'b0, a_lt_b};
+            4'd11: fast_path_res = {31'b0, a_le_b};
+            4'd12: fast_path_res = f2i_signed_res;
+            4'd13: fast_path_res = f2i_unsigned_res;
+            4'd14, 4'd15: fast_path_res = i2f_res;
+            default: fast_path_res = round_res;
+        endcase
+    end
 endmodule
