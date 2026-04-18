@@ -302,6 +302,25 @@ module fpu(
                         ready <= 1'b0; // Reset ready flag ONLY when start returns to 0
                     end
                 end
+                
+                ALIGN_MUL_DIV: begin
+                    if (op == 4'd5) begin
+                        // FMUL Logic: sign = sign_a XOR sign_b
+                        sign_res <= sign_a ^ sign_b;
+                        
+                        // Combinational multiplier (could also be made sequential for extreme fMax)
+                        out <= out; // Pipeline hold dummy
+                        
+                        // Product of two 24-bit mantissas is 48 bits.
+                        if (({25'b0, mant_a} * {25'b0, mant_b}) & 50'h800000000000) begin
+                            mant_res <= ({25'b0, mant_a} * {25'b0, mant_b}) >> 23;
+                            exp_res <= {1'b0, exp_a} + {1'b0, exp_b} - 10'd127;
+                        end else begin
+                            mant_res <= ({25'b0, mant_a} * {25'b0, mant_b}) >> 22;
+                            exp_res <= {1'b0, exp_a} + {1'b0, exp_b} - 10'd128;
+                        end
+                        state <= NORM;
+                    end else if (op == 4'd6) begin
             endcase
         end
     end
