@@ -268,4 +268,41 @@ module fpu(
             default: fast_path_res = round_res;
         endcase
     end
+
+    // FPU execute state machine
+    always @(posedge clk or posedge rst) begin
+        if (rst) begin
+            state <= IDLE;
+            ready <= 1'b0;
+            out <= 32'b0;
+            fflags <= 5'b0;
+        end else begin
+            case (state)
+                IDLE: begin
+                    if (start && !ready) begin // Only trigger if we haven't already processed it
+                        if ((op >= 4'd2 && op <= 4'd4) || (op >= 4'd7 && op <= 4'd15)) begin
+                            // Fast path for round/floor/ceil and min/max/compare/cvt operations (single-cycle bypass)
+                            out <= fast_path_res;
+                            ready <= 1'b1;
+                            state <= IDLE; // remain in IDLE but wait for start to go low
+                        end else begin
+                            // Unpack components (handle subnormals correctly without hidden 1)
+                            sign_a <= a[31];
+                            exp_a  <= {1'b0, a[30:23]};
+                            mant_a <= (|a[30:23]) ? {2'b01, a[22:0]} : {2'b00, a[22:0]};
+                            
+                            // For ADD/SUB, sign_b relies on op==1. For MUL/DIV, compute target sign
+                            sign_b <= (op == 4'd1) ? ~b[31] : b[31];
+                            exp_b  <= {1'b0, b[30:23]};
+                            mant_b <= (|b[30:23]) ? {2'b01, b[22:0]} : {2'b00, b[22:0]};
+                            
+                            state <= ALIGN_MUL_DIV;
+                        end
+                    end else if (!start) begin
+                        ready <= 1'b0; // Reset ready flag ONLY when start returns to 0
+                    end
+                end
+            endcase
+        end
+    end
 endmodule
