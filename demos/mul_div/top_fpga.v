@@ -38,4 +38,24 @@ end
 // Use a Global Clock Buffer (BUFG) for the slow clock 
 // to ensure it routes cleanly on the FPGA clock tree, 
 // avoiding clock skew that can cause erratic/fast glitches.
+wire slow_clk;
+BUFG bufg_inst (
+    .I(clk_div[23]),  // ~11.9 Hz from 100 MHz for visible but responsive execution
+    .O(slow_clk)
+);
+
+//////////////////////////////////////////////////////////////
+// 5-Stage Pipeline CPU
+// (instruction and data memories are integrated inside)
+//////////////////////////////////////////////////////////////
+wire [31:0] l1_hit_cnt;
+wire [31:0] l1_miss_cnt;
+wire [31:0] cycle_cnt;
+
+pipe pipe_u (
+    .clk        (slow_clk),
+    .reset      (reset),
+    .stall      (1'b0),
+    .sw         (sw), // Pass slide switches into pipeline for MMIO reading
+    .exception  (exception),
 endmodule
