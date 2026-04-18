@@ -18,3 +18,13 @@
 // CASE 2: 3.5 * 1.5 = 5.25 (0x40A80000)
 0085a203 // lw x4, 8(x11)   - Load 1.5
 00000013 // nop
+104082d3 // fmul.s x5, x1, x4 - x5 = 5.25 (Raw IEEE)
+00000013 // nop
+00552023 // sw x5, 0(x10)   - Store to MMIO
+
+// CASE 3: 3.5 / 2.5 = 1.4 (0x3FB33333)
+18208353 // fdiv.s x6, x1, x2 - x6 = 1.4 (Raw IEEE)
+00000013 // nop
+00652023 // sw x6, 0(x10)   - Store to MMIO
+
+0000006f // j halt
