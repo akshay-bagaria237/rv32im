@@ -410,7 +410,18 @@ module fpu(
                         ready <= 1'b1;
                         state <= IDLE;
                     end else begin
+                        // Normal execution
+                        if ((exp_res - {5'b0, shift_amt}) >= 255) begin
+                            out <= {sign_res, 8'hFF, 23'd0};
+                        end else begin
+                            out <= {sign_res, exp_res[7:0] - {3'b0, shift_amt}, shifted_mant[22:0]};
+                        end
+                        ready <= 1'b1;
+                        state <= IDLE;
+                    end
+                end
             endcase
         end
     end
+
 endmodule
