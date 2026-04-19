@@ -384,6 +384,32 @@ module fpu(
                         div_count <= div_count - 1;
                     end
                 end
+                
+                NORM: begin
+                    if (mant_res[24]) begin 
+                        // Overflowed during addition (Carry Out)
+                        if (exp_res >= 10'd254) begin
+                            out <= {sign_res, 8'hFF, 23'd0}; // Overflow to Inf
+                        end else begin
+                            out <= {sign_res, exp_res[7:0] + 8'd1, mant_res[23:1]};
+                        end
+                        ready <= 1'b1;
+                        state <= IDLE;
+                    end else if (mant_res == 25'b0) begin 
+                        out <= {sign_res, 31'b0};
+                        ready <= 1'b1;
+                        state <= IDLE;
+                    end else if (exp_res <= 10'd0 || exp_res[9]) begin 
+                        // Underflow/Subnormal check (handles negative exp due to subtraction in div/mul)
+                        out <= {sign_res, 31'b0}; // Simplified Underflow to zero
+                        ready <= 1'b1;
+                        state <= IDLE;
+                    end else if (exp_res <= {5'b0, shift_amt}) begin 
+                        // Right shift into subnormal range
+                        out <= {sign_res, 8'd0, mant_res[22:0] >> (shift_amt - exp_res[4:0] + 1)};
+                        ready <= 1'b1;
+                        state <= IDLE;
+                    end else begin
             endcase
         end
     end
