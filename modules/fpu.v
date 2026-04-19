@@ -342,6 +342,26 @@ module fpu(
                         state <= ADD;
                     end
                 end
+                
+                ADD: begin
+                    // Add or subtract based on signs (For FADD/FSUB only)
+                    if (sign_a == sign_b) begin
+                        mant_res <= mant_a + mant_b;
+                        sign_res <= sign_a;
+                    end else begin
+                        if (mant_a > mant_b) begin
+                            mant_res <= mant_a - mant_b;
+                            sign_res <= sign_a;
+                        end else if (mant_a < mant_b) begin
+                            mant_res <= mant_b - mant_a;
+                            sign_res <= sign_b;
+                        end else begin
+                            mant_res <= 25'b0;
+                            sign_res <= 1'b0; // Exact zero cancellation is +0.0
+                        end
+                    end
+                    state <= NORM;
+                end
             endcase
         end
     end
