@@ -99,6 +99,7 @@ wire rst_high = ~reset;
 
 multiplier u_multiplier (.operand1(alu_operand1), .operand2(alu_operand2_reg), .funct3(funct3_in), .result(mul_result));
 divider u_divider (.clk(clk), .reset(rst_high), .start(div_kick_start), .operand1(alu_operand1), .operand2(alu_operand2_reg), .funct3(funct3_in), .result(div_result), .busy(div_busy));
+fpu u_fpu (.clk(clk), .rst(rst_high), .start(fpu_kick_start), .op(fpu_op_in), .a(alu_operand1), .b(alu_operand2_reg), .rm(funct3_in), .out(fpu_result), .ready(fpu_ready), .fflags());
 
 always @(posedge clk or negedge reset) begin
     if (!reset || flush) begin 
