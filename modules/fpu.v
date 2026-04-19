@@ -362,6 +362,28 @@ module fpu(
                     end
                     state <= NORM;
                 end
+                
+                DIVIDE_LOOP: begin
+                    if (div_count == 0) begin
+                        if (div_A[23]) begin 
+                            mant_res <= {1'b0, div_A[23:0]}; // Mantissa aligned (bit 23 = 1)
+                            exp_res <= {1'b0, exp_a} - {1'b0, exp_b} + 10'd127;
+                        end else begin
+                            mant_res <= {1'b0, div_A[22:0], 1'b0}; // Shift left so bit 23 = 1
+                            exp_res <= {1'b0, exp_a} - {1'b0, exp_b} + 10'd126;
+                        end
+                        state <= NORM;
+                    end else begin
+                        if ({div_P[46:0], div_A[47]} >= {24'b0, mant_b}) begin
+                            div_P <= {div_P[46:0], div_A[47]} - {24'b0, mant_b};
+                            div_A <= {div_A[46:0], 1'b1};
+                        end else begin
+                            div_P <= {div_P[46:0], div_A[47]};
+                            div_A <= {div_A[46:0], 1'b0};
+                        end
+                        div_count <= div_count - 1;
+                    end
+                end
             endcase
         end
     end
