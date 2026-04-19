@@ -3,7 +3,7 @@
 module fetch
 #(
     parameter [31:0] RESET = 32'h0000_0000,
-    parameter INIT_FILE = "C:/Users/Lenovo/Downloads/riscv-32im/riscv-32im.srcs/sources_1/imports/5-stage-version/imem_fpga.hex"
+    parameter INIT_FILE = "./imem_fpga.hex"
 )
 (
     input               clk,
