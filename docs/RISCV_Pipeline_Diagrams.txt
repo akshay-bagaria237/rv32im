@@ -1,0 +1,149 @@
+================================================================================
+RISC-V 32IM 5-STAGE PIPELINE BLOCK DIAGRAMS
+================================================================================
+
+1. TOP-LEVEL HARDWARE BLOCK DIAGRAM (pipeline.v)
+--------------------------------------------------------------------------------
+The diagram below shows the 5-stage pipeline, including the Hazard Unit, 
+Forwarding Logic, and the Register File with write-back bypass.
+
+      +-------+        +-------+        +---------+        +--------+        +----------+
+      |  IF   |        |  ID   |        |   EX    |        |  MEM   |        |    WB    |
+      | Fetch |------->| Decode|------->| Execute |------->| Memory |------->|Writeback |
+      +-------+        +-------+        +---------+        +--------+        +----------+
+          ^                |                 |                  |                 |
+          |                |                 |                  |                 |
+          +----------------|-----------------|------------------|-----------------+
+          |                |                 |                  |                 |
+          |                v                 |                  |                 |
+          |         +-------------+          |                  |                 |
+          |         | Hazard Unit |          |                  |                 |
+          |         +-------------+          |                  |                 |
+          |                |                 |                  |                 |
+          |                v                 v                  v                 |
+          |         +------------------------------------------------+            |
+          |         |               Forwarding Logic                 |            |
+          |         +------------------------------------------------+            |
+          |                                  |                                    |
+          |                                  v                                    |
+          +----------------------------[Branch Logic]-----------------------------+
+
+DETAILED PIPELINE STRUCTURE:
+[IF] Stage:
+  - PC Update Logic
+  - Instruction Memory (IMEM)
+  - Outputs: pc [32], pc+4 [32], instruction [32]
+
+[ID] Stage (Register Fetch & Control):
+  - Register File (32 x 32-bit) with Bypass logic
+  - Immediate Generator
+  - Control Unit (Decodes instruction -> alu_src, mem_write, etc.)
+  - Pipeline Registers: pc, pc+4, rs1_data, rs2_data, imm, rs1_addr, rs2_addr, rd_addr, funct3, etc.
+
+[EX] Stage (ALU & M-Extension):
+  - Forwarding Muxes (A & B)
+  - ALU (Arithmetic/Logic)
+  - MUL (Multiplier) --- [NEW M-EXT]
+  - DIV (Divider)    --- [NEW M-EXT]
+  - Branch/JUMP Target Calc & Condition Check
+  - Pipeline Registers: pc+4, alu_result, rs2_data, rd_addr, funct3, mem_ctrl, wb_ctrl
+
+[MEM] Stage (Data Memory Access):
+  - Data Memory (DMEM)
+  - Byte/Halfword Alignment Logic (Loads/Stores)
+  - Pipeline Registers: pc+4, alu_result, mem_read_data, rd_addr, wb_ctrl
+
+[WB] Stage (Register Write-back):
+  - Result Mux (ALU vs Memory vs PC+4)
+  - Feedback to ID Stage Register File
+
+
+2. EXECUTE MODULE INTERNAL DIAGRAM (execute.v)
+--------------------------------------------------------------------------------
+This module contains the primary execution units and hazard-mitigation muxes.
+
+                 [forward_ex_mem]  [forward_mem_wb]  [rs1_data_in]
+                        |                 |                |
+                        v                 v                v
+                  +----------------------------------------------+
+                  |              Forwarding Mux A                | [forward_a]
+                  +----------------------------------------------+
+                                         |
+                                         +--------------------------+
+                                         | [alu_operand1]           |
+                                         v                          v
+    [pc_in]--+     +--------------------------+          +-----------------------+
+             |     |           ALU            |          |     M-EXTENSION       |
+   [imm]-----+---->| (ADD, SUB, AND, OR, XOR, |          |   (Multiplier &       |
+             |     |  SLL, SRL, SRA, SLT/U)   |          |    Divider)           |
+             +---->+--------------------------+          +-----------------------+
+                               |                                    |
+                               +-----------------+------------------+
+                                                 |
+                                                 v
+                                        +------------------+
+                                        |   Result Mux     | [is_m_ext_in]
+                                        +------------------+
+                                                 |
+                                                 v [final_result]
+
+                 [forward_ex_mem]  [forward_mem_wb]  [rs2_data_in]
+                        |                 |                |
+                        v                 v                v
+                  +----------------------------------------------+
+                  |              Forwarding Mux B                | [forward_b]
+                  +----------------------------------------------+
+                         |                    |
+                         | [alu_operand2_reg] v
+                         |             +-------------+
+                         |             | ALU Src Mux | <--- [immediate_in]
+                         |             +-------------+
+                         |                    | [alu_operand2]
+                         v                    v
+                  [To multiplier]       [To ALU/Divider]
+
+[STALL LOGIC]: Divider is multi-cycle; [stall_out] is asserted when [div_busy].
+
+
+3. MEMORY MODULE INTERNAL DIAGRAM (memory.v)
+--------------------------------------------------------------------------------
+Handles Data Memory access and interface logic.
+
+                            [alu_result_in] (Address)
+                                     |
+                                     v
+            +------------------------------------------------------+
+            |              Address Decoder / Memory Index          |
+            +------------------------------------------------------+
+                 |                                     |
+                 v                                     v
+      +----------------------+              +----------------------+
+      |   Store Alignment    |              |     Load Alignment   |
+      | (Byte/Half/Word)     |              |    (Sign/Zero Ext)   |
+      +----------------------+              +----------------------+
+                 |                                     ^
+                 v                                     |
+      +------------------------------------------------------+
+      |                  DATA MEMORY (DMEM)                  |
+      |                (Distributed RAM 1024x32)             |
+      +------------------------------------------------------+
+                 |                                     |
+                 +-------------------------------------+
+                                     |
+                                     v
+                            +-----------------+
+                            |  Forward Mux    | [mem_to_reg_in]
+                            +-----------------+
+                                     |
+                                     v [forward_data] (to EX stage)
+
+KEY SIGNALS & WIDTHS:
+- PC/Address/Data: 32 bits
+- Reg Addresses: 5 bits
+- Funct3: 3 bits
+- Control Signals: 1 bit (RegWrite, MemRead, MemWrite, etc.)
+- Forwarding: 2 bits (forward_a, forward_b)
+
+LEGEND:
+[NEW] = M-Extension additions (multiplier.v, divider.v)
+================================================================================
