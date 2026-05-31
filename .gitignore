@@ -1,0 +1,47 @@
+# ======================
+# Vivado Build Artifacts
+# ======================
+*.runs/
+*.sim/
+*.hw/
+*.ip_user_files/
+*.cache/
+*.hbs/
+*.str/
+.Xil/
+
+# Vivado generated files
+*.jou
+*.log
+*.pb
+*.dcp
+*.bit
+*.wdb
+*.vcd
+*.backup.*
+
+# Vivado project file (contains absolute paths - not portable)
+*.xpr
+
+# ======================
+# OS Files
+# ======================
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ======================
+# Python
+# ======================
+__pycache__/
+*.pyc
+*.pyo
+
+# ======================
+# Editor / IDE
+# ======================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
