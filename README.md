@@ -1,6 +1,6 @@
 # RISC-V 32IM Pipelined Processor
 
-A 5-stage pipelined RISC-V processor implementing the **RV32IM** instruction set (Integer + Multiply/Divide), with extensions for floating-point operations, L1/L2 cache hierarchy, and branch prediction. Designed for **Xilinx Nexys A7 FPGA** (Artix-7).
+A 5-stage pipelined RISC-V processor implementing the **RV32IM** instruction set (Integer + Multiply/Divide), with extensions for floating-point operations, L1 cache, and branch prediction. Designed for **Xilinx Nexys A7 FPGA** (Artix-7).
 
 ## Features
 
@@ -8,7 +8,7 @@ A 5-stage pipelined RISC-V processor implementing the **RV32IM** instruction set
 | Stage | Module | Description |
 |-------|--------|-------------|
 | **IF** | `fetch.v` | PC update logic + instruction memory (IMEM) |
-| **ID** | `decode.v` | Register file (32×32-bit) with bypass, immediate generator, control unit |
+| **ID** | `decode.v` | Immediate generator, control unit (Register file is in `pipeline.v`) |
 | **EX** | `execute.v` | ALU, forwarding muxes, branch/jump logic |
 | **MEM** | `memory.v` | Data memory (DMEM), byte/halfword alignment, load/store |
 | **WB** | `writeback.v` | Result mux (ALU / Memory / PC+4), register write-back |
@@ -20,15 +20,15 @@ A 5-stage pipelined RISC-V processor implementing the **RV32IM** instruction set
 ### Floating-Point Unit
 - **FPU** (`fpu.v`) — IEEE 754 single-precision operations: add, subtract, multiply, divide, compare, min/max, convert
 
-### Cache Hierarchy
-- **L1 Cache** (`l1_cache.v`) — direct-mapped, low-latency
-- **L2 Cache** (`l2_cache.v`) — larger, backs up L1
+### Cache
+- **L1 Cache** (`l1_cache.v`) — 4-way set-associative, low-latency data cache
+*(Note: The repository contains an L2 cache module, but it is currently not integrated/functional.)*
 
 ### Branch Prediction
 - **BPB** (`bpb.v`) — 2-bit saturating counter branch prediction buffer
 
 ### Hazard Handling
-- **Data forwarding** (EX→EX, MEM→EX) to minimize stalls
+- **Data forwarding** (WB→EX, MEM→EX) to minimize stalls
 - **Load-use hazard** detection with automatic pipeline stall
 - **Branch flushing** logic
 
